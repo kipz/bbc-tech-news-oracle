@@ -1,0 +1,76 @@
+name: Attest BBC Technology RSS Feed
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  create-attestation:
+    uses: kipz/url-oracle/.github/workflows/create-attestation.yml@main
+    with:
+      url: 'http://newsrss.bbc.co.uk/rss/newsonline_uk_edition/technology/rss.xml'
+    permissions:
+      id-token: write
+      contents: write
+    secrets:
+      token: ${{ secrets.ORACLE_TOKEN }}
+
+  manage-releases:
+    needs: create-attestation
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    - name: "Download attestation.json from previous job"
+      uses: actions/download-artifact@v4
+      with:
+        name: attestation.json
+
+    - name: Check for existing release
+      id: release_check
+      run: |
+        # Get the content hash from the attestation
+        CONTENT_HASH=$(jq -r '.payload.content_hash' attestation.json)
+        echo "Content hash: $CONTENT_HASH"
+        
+        # Check if a release with this content hash already exists
+        RELEASE_EXISTS=false
+        for tag in $(gh api repos/${{ github.repository }}/tags --jq '.[].name' 2>/dev/null || echo ""); do
+          if [[ "$tag" == "content-$CONTENT_HASH" ]]; then
+            RELEASE_EXISTS=true
+            break
+          fi
+        done
+        
+        if [[ "$RELEASE_EXISTS" == "true" ]]; then
+          echo "✅ Release with content hash $CONTENT_HASH already exists"
+          echo "release_exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "🔄 No existing release found for content hash $CONTENT_HASH"
+          echo "release_exists=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Create release if needed
+      if: steps.release_check.outputs.release_exists != 'true'
+      run: |
+        CONTENT_HASH=$(jq -r '.payload.content_hash' attestation.json)
+        
+        # Create release with content hash tag
+        gh release create "content-$CONTENT_HASH" \
+          --title "BBC Technology RSS Feed Attestation - Content Hash: $CONTENT_HASH" \
+          --notes "GitHub attestation for content hash $CONTENT_HASH" \
+          attestation.json
+        
+        echo "✅ Created release with tag: content-$CONTENT_HASH"
+        
+    - name: Skip release creation
+      if: steps.release_check.outputs.release_exists == 'true'
+      run: |
+        echo "⏭️  Skipping release creation - content hash already attested"
+        echo "Existing release: content-$CONTENT_HASH"

@@ -1,0 +1,36 @@
+name: Verify BBC Technology RSS Feed Attestation
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_name:
+        description: 'Release name'
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  fetch-release-attestation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Download attestation.json from release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "${{ github.event.inputs.release_name }}" --pattern "attestation.json"
+      - name: Upload attestation.json
+        uses: actions/upload-artifact@v4
+        with:
+          name: attestation.json
+          path: attestation.json
+
+  verify-oidc-attestation:
+    needs: fetch-release-attestation
+    uses: kipz/url-oracle/.github/workflows/verify-attestation.yml@main
+    secrets:
+      token: ${{ secrets.ORACLE_TOKEN }}
