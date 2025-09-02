@@ -13,6 +13,7 @@ jobs:
     permissions:
       id-token: write
       contents: write
+      actions: read
     secrets:
       token: ${{ secrets.ORACLE_TOKEN }}
 
@@ -35,42 +36,42 @@ jobs:
     - name: Check for existing release
       id: release_check
       run: |
-        # Get the content hash from the attestation
-        CONTENT_HASH=$(jq -r '.payload.content_hash' attestation.json)
-        echo "Content hash: $CONTENT_HASH"
+        # Get the content digest from the attestation
+        CONTENT_DIGEST=$(jq -r '.payload.content_digest' attestation.json)
+        echo "Content digest: $CONTENT_DIGEST"
         
-        # Check if a release with this content hash already exists
+        # Check if a release with this content digest already exists
         RELEASE_EXISTS=false
         for tag in $(gh api repos/${{ github.repository }}/tags --jq '.[].name' 2>/dev/null || echo ""); do
-          if [[ "$tag" == "content-$CONTENT_HASH" ]]; then
+          if [[ "$tag" == "content-$CONTENT_DIGEST" ]]; then
             RELEASE_EXISTS=true
             break
           fi
         done
         
         if [[ "$RELEASE_EXISTS" == "true" ]]; then
-          echo "✅ Release with content hash $CONTENT_HASH already exists"
+          echo "✅ Release with content digest $CONTENT_DIGEST already exists"
           echo "release_exists=true" >> $GITHUB_OUTPUT
         else
-          echo "🔄 No existing release found for content hash $CONTENT_HASH"
+          echo "🔄 No existing release found for content digest $CONTENT_DIGEST"
           echo "release_exists=false" >> $GITHUB_OUTPUT
         fi
 
     - name: Create release if needed
       if: steps.release_check.outputs.release_exists != 'true'
       run: |
-        CONTENT_HASH=$(jq -r '.payload.content_hash' attestation.json)
+        CONTENT_DIGEST=$(jq -r '.payload.content_digest' attestation.json)
         
-        # Create release with content hash tag
-        gh release create "content-$CONTENT_HASH" \
-          --title "BBC Technology RSS Feed Attestation - Content Hash: $CONTENT_HASH" \
-          --notes "GitHub attestation for content hash $CONTENT_HASH" \
+        # Create release with content digest tag
+        gh release create "content-$CONTENT_DIGEST" \
+          --title "BBC Technology RSS Feed Attestation - Content Digest: $CONTENT_DIGEST" \
+          --notes "GitHub attestation for content digest $CONTENT_DIGEST" \
           attestation.json
         
-        echo "✅ Created release with tag: content-$CONTENT_HASH"
+        echo "✅ Created release with tag: content-$CONTENT_DIGEST"
         
     - name: Skip release creation
       if: steps.release_check.outputs.release_exists == 'true'
       run: |
-        echo "⏭️  Skipping release creation - content hash already attested"
-        echo "Existing release: content-$CONTENT_HASH"
+        echo "⏭️  Skipping release creation - content digest already attested"
+        echo "Existing release: content-$CONTENT_DIGEST"

@@ -12,7 +12,7 @@ This oracle system monitors the BBC Technology RSS feed (`http://newsrss.bbc.co.
 ## Features
 
 - **Automated Attestation Creation**: Creates attestations on every push to main branch or manual trigger
-- **Content Hash Tracking**: Uses content hashes to prevent duplicate releases
+- **Content Digest Tracking**: Uses content digests to prevent duplicate releases
 - **Release Management**: Automatically creates GitHub releases with attestation files
 - **Verification Workflow**: Allows manual verification of existing attestations
 - **Integration with URL Oracle**: Uses the `kipz/url-oracle` reusable workflows
@@ -26,11 +26,11 @@ This oracle system monitors the BBC Technology RSS feed (`http://newsrss.bbc.co.
 - Manual workflow dispatch
 
 **Process:**
-1. Creates attestation using the URL Oracle workflow
+1. Creates attestation using the URL Oracle workflow (requires `id-token: write`, `contents: write`, `actions: read` permissions)
 2. Downloads the generated attestation.json
-3. Checks for existing releases with the same content hash
+3. Checks for existing releases with the same content digest
 4. Creates a new release only if content has changed
-5. Tags releases with format: `content-{hash}`
+5. Tags releases with format: `content-{digest}`
 
 ### 2. Verify BBC Technology RSS Feed Attestation (`verify-bbc.yml`)
 
@@ -56,12 +56,12 @@ To verify an existing attestation:
 1. Go to the Actions tab in GitHub
 2. Select "Verify BBC Technology RSS Feed Attestation"
 3. Click "Run workflow"
-4. Enter the release name (format: `content-{hash}`)
+4. Enter the release name (format: `content-{digest}`)
 5. The workflow will download and verify the attestation
 
 ### Finding Release Names
 
-Release names follow the pattern `content-{hash}` where `{hash}` is the SHA-256 hash of the RSS feed content. You can find available releases in the GitHub Releases section of this repository.
+Release names follow the pattern `content-{digest}` where `{digest}` is the content digest of the RSS feed content. You can find available releases in the GitHub Releases section of this repository.
 
 ## Configuration
 
