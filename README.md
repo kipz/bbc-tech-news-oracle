@@ -12,9 +12,10 @@ This oracle system monitors the BBC Technology RSS feed (`http://newsrss.bbc.co.
 ## Features
 
 - **Automated Attestation Creation**: Creates attestations on every push to main branch or manual trigger
-- **Content Digest Tracking**: Uses content digests to prevent duplicate releases
-- **Release Management**: Automatically creates GitHub releases with attestation files
-- **Verification Workflow**: Allows manual verification of existing attestations
+- **Content Digest Tracking**: Uses content digests to prevent duplicate releases by checking existing tags
+- **Smart Release Management**: Automatically creates GitHub releases with attestation files, skipping duplicates
+- **Artifact-based Verification**: Uses GitHub Actions artifacts to pass attestation data between jobs
+- **GitHub API Integration**: Queries existing releases to prevent duplicates
 - **Integration with URL Oracle**: Uses the [`kipz/url-oracle`](https://github.com/kipz/url-oracle) reusable workflows
 
 ## Workflows
@@ -25,21 +26,32 @@ This oracle system monitors the BBC Technology RSS feed (`http://newsrss.bbc.co.
 - Push to main branch
 - Manual workflow dispatch
 
+**Jobs:**
+1. **create-attestation**: Uses the URL Oracle workflow to generate attestation for the RSS feed
+2. **manage-releases**: Handles release management and duplicate prevention
+
 **Process:**
 1. Creates attestation using the URL Oracle workflow (requires `id-token: write`, `contents: write`, `actions: read` permissions)
-2. Downloads the generated attestation.json
-3. Checks for existing releases with the same content digest
-4. Creates a new release only if content has changed
-5. Tags releases with format: `content-{digest}`
+2. Downloads the generated attestation.json from the previous job
+3. Extracts content digest from the attestation
+4. Checks for existing releases with the same content digest by querying GitHub API
+5. Creates a new release only if content has changed (skips if duplicate)
+6. Tags releases with format: `content-{digest}`
+7. Release title includes the content digest for easy identification
 
 ### 2. Verify BBC Technology RSS Feed Attestation (`verify-bbc.yml`)
 
 **Triggers:**
 - Manual workflow dispatch with release name input
 
+**Jobs:**
+1. **fetch-release-attestation**: Downloads the attestation file from the specified release
+2. **verify-bbc-attestation**: Verifies the attestation using the URL Oracle workflow
+
 **Process:**
-1. Downloads attestation.json from specified release
-2. Verifies the attestation using the URL Oracle verification workflow
+1. Downloads attestation.json from the specified release using GitHub CLI
+2. Uploads the attestation as an artifact for the next job
+3. Verifies the attestation using the URL Oracle verification workflow
 
 ## Usage
 
@@ -65,9 +77,9 @@ Release names follow the pattern `content-{digest}` where `{digest}` is the cont
 
 ## Configuration
 
-The system requires the following GitHub secrets:
-
-- `ORACLE_TOKEN`: Token for accessing the URL Oracle service
+The system uses GitHub's built-in authentication and does not require any additional secrets. The workflows use:
+- `github.token` for GitHub API access
+- Built-in GitHub Actions permissions for repository access
 
 ## Dependencies
 
