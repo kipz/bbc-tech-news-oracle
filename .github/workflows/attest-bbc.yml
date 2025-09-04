@@ -14,8 +14,6 @@ jobs:
       id-token: write
       contents: write
       actions: read
-    secrets:
-      token: ${{ secrets.ORACLE_TOKEN }}
 
   manage-releases:
     needs: create-attestation

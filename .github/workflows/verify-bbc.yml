@@ -32,5 +32,3 @@ jobs:
   verify-oidc-attestation:
     needs: fetch-release-attestation
     uses: kipz/url-oracle/.github/workflows/verify-attestation.yml@main
-    secrets:
-      token: ${{ secrets.ORACLE_TOKEN }}
