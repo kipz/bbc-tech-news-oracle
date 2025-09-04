@@ -15,7 +15,7 @@ This oracle system monitors the BBC Technology RSS feed (`http://newsrss.bbc.co.
 - **Content Digest Tracking**: Uses content digests to prevent duplicate releases
 - **Release Management**: Automatically creates GitHub releases with attestation files
 - **Verification Workflow**: Allows manual verification of existing attestations
-- **Integration with URL Oracle**: Uses the `kipz/url-oracle` reusable workflows
+- **Integration with URL Oracle**: Uses the [`kipz/url-oracle`](https://github.com/kipz/url-oracle) reusable workflows
 
 ## Workflows
 
