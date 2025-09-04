@@ -29,6 +29,6 @@ jobs:
           name: attestation.json
           path: attestation.json
 
-  verify-oidc-attestation:
+  verify-bbc-attestation:
     needs: fetch-release-attestation
     uses: kipz/url-oracle/.github/workflows/verify-attestation.yml@main
