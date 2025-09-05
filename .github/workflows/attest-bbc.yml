@@ -34,8 +34,8 @@ jobs:
     - name: Check for existing release
       id: release_check
       run: |
-        # Get the content digest from the attestation
-        CONTENT_DIGEST=$(jq -r '.payload.content_digest' attestation.json)
+        # Get the content digest from the attestation and remove sha256: prefix
+        CONTENT_DIGEST=$(jq -r '.payload.content_digest' attestation.json | sed 's/^sha256://')
         echo "Content digest: $CONTENT_DIGEST"
         
         # Check if a release with this content digest already exists
@@ -58,7 +58,7 @@ jobs:
     - name: Create release if needed
       if: steps.release_check.outputs.release_exists != 'true'
       run: |
-        CONTENT_DIGEST=$(jq -r '.payload.content_digest' attestation.json)
+        CONTENT_DIGEST=$(jq -r '.payload.content_digest' attestation.json | sed 's/^sha256://')
         
         # Create release with content digest tag
         gh release create "content-$CONTENT_DIGEST" \
